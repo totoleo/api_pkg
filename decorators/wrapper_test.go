@@ -1,4 +1,4 @@
-package carry
+package decorators_test
 
 import (
 	"context"
@@ -10,11 +10,13 @@ import (
 	"github.com/cloudwego/hertz"
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/gin-gonic/gin"
+
+	"github.com/totoleo/api_pkg/decorators"
 )
 
 func TestHttpWrapper(t *testing.T) {
 	gin.SetMode("release")
-	wp := HttpWrapper(ginHandler)
+	wp := decorators.HttpWrapper(ginHandler)
 	writer := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(writer)
 
@@ -32,7 +34,7 @@ func TestHttpWrapper(t *testing.T) {
 
 func TestHertz(t *testing.T) {
 
-	wp := HttpWrapperV2(hertzHandler)
+	wp := decorators.HttpWrapperV2(hertzHandler)
 
 	c := app.NewContext(1)
 
