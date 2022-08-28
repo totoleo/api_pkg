@@ -3,13 +3,13 @@ module github.com/totoleo/api_pkg
 go 1.19
 
 require (
+	github.com/bytedance/gopkg v0.0.0-20220413063733-65bf48ffb3a7
 	github.com/cloudwego/hertz v0.2.1
 	github.com/gin-gonic/gin v1.8.1
 )
 
 require (
 	github.com/bytedance/go-tagexpr/v2 v2.9.2 // indirect
-	github.com/bytedance/gopkg v0.0.0-20220413063733-65bf48ffb3a7 // indirect
 	github.com/bytedance/sonic v1.4.0 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20211019084208-fb5309c8db06 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
