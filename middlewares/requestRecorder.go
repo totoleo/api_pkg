@@ -3,6 +3,8 @@ package middlewares
 import (
 	"context"
 	"log"
+
+	"github.com/bytedance/gopkg/cloud/metainfo"
 )
 
 func RequestRecorderMiddleware[R any](enable func() bool) func(ctx context.Context, c R) {
@@ -10,7 +12,8 @@ func RequestRecorderMiddleware[R any](enable func() bool) func(ctx context.Conte
 		return nil
 	}
 	return func(ctx context.Context, c R) {
-		log.Printf("%+v", ctx)
+		log.Printf("transient: %+v", metainfo.GetAllValues(ctx))
+		log.Printf("persistent: %+v", metainfo.GetAllPersistentValues(ctx))
 	}
 }
 
