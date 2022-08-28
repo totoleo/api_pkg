@@ -6,11 +6,12 @@ import (
 	"net/http"
 )
 
+// Response 这是一种典型的响应数据结构，当然如果作为一个合格的工具库，这类结构应该由用户制定😂
 type Response[D any] struct {
-	St    int               `json:"st"`
-	Msg   string            `json:"msg"`
-	Data  D                 `json:"data"`
-	Extra map[string]string `json:"extra"` //存放类似 logId, response time 等非业务信息
+	Code    int               `json:"code"`
+	Message string            `json:"message"`
+	Data    D                 `json:"data"`
+	Extra   map[string]string `json:"extra"` //存放类似 logId, response time 等非业务信息
 }
 
 type render interface {
@@ -18,6 +19,8 @@ type render interface {
 	Header(key, value string)
 }
 
+// Error 用户可以实现一个满足 Error 接口的结构，携带错误消息和期望展示给用户的信息。如此一来，在业务逻辑只需要判断是否发生错误，以及期望展示给用户什么样的提示
+// 至于其它部分，应该交给框架完成。
 type Error interface {
 	error
 	Code() int
@@ -30,27 +33,16 @@ type Endpoint[D any, T render] func(c T) (D, error)
 type HandlerV2[T render] func(ctx context.Context, c T)
 type EndpointV2[D any, T render] func(ctx context.Context, c T) (D, error)
 
+// SlaHeader x-sla 可以帮助上游的网关来判断接口是否成功完成请求的处理，这样可以在网关完成统一的可用性统计
 const SlaHeader = "x-sla"
-
-const SlaError = "0"
+const slaFailed = "0"
 
 // HttpWrapper 适配类似 gin 一类的框架
-func HttpWrapper[D any, T render](fn Endpoint[D, T]) Handler[T] {
+func HttpWrapper[D any, T render](fn EndpointV2[D, T], extractor func(c T) context.Context) Handler[T] {
+	wp := HttpWrapperV2[D, T](fn)
 	return func(c T) {
-		data, err := fn(c)
-		if err != nil {
-			var cErr Error
-			var resp Response[D]
-			if errors.As(err, &cErr) {
-				resp = Response[D]{cErr.Code(), cErr.Message(), data, nil}
-			} else {
-				resp = Response[D]{500, "系统故障", data, nil}
-			}
-			c.Header(SlaHeader, SlaError)
-			c.JSON(http.StatusOK, resp)
-			return
-		}
-		c.JSON(http.StatusOK, Response[D]{0, "ok", data, nil})
+		ctx := extractor(c)
+		wp(ctx, c)
 	}
 }
 
@@ -62,14 +54,14 @@ func HttpWrapperV2[D any, T render](fn EndpointV2[D, T]) HandlerV2[T] {
 			var cErr Error
 			var resp Response[D]
 			if errors.As(err, &cErr) {
-				resp = Response[D]{St: cErr.Code(), Msg: cErr.Message(), Data: data}
+				resp = Response[D]{Code: cErr.Code(), Message: cErr.Message(), Data: data}
 			} else {
-				resp = Response[D]{St: 500, Msg: "系统故障", Data: data}
+				resp = Response[D]{Code: 500, Message: "系统故障", Data: data}
 			}
-			c.Header(SlaHeader, SlaError)
+			c.Header(SlaHeader, slaFailed)
 			c.JSON(http.StatusOK, resp)
 			return
 		}
-		c.JSON(http.StatusOK, Response[D]{St: 0, Msg: "ok", Data: data})
+		c.JSON(http.StatusOK, Response[D]{Code: 0, Message: "ok", Data: data})
 	}
 }

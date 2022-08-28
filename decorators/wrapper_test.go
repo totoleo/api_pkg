@@ -16,7 +16,9 @@ import (
 
 func TestHttpWrapper(t *testing.T) {
 	gin.SetMode("release")
-	wp := decorators.HttpWrapper(ginHandler)
+	wp := decorators.HttpWrapper(ginHandler, func(c *gin.Context) context.Context {
+		return context.Background()
+	})
 	writer := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(writer)
 
@@ -45,7 +47,7 @@ func TestHertz(t *testing.T) {
 	t.Log(string(c.Response.Header.Header()))
 }
 
-func ginHandler(c *gin.Context) (*Vo, error) {
+func ginHandler(ctx context.Context, c *gin.Context) (*Vo, error) {
 	return &Vo{
 		Id:   1,
 		Name: "gin@" + gin.Version,
@@ -56,7 +58,7 @@ func hertzHandler(ctx context.Context, c *app.RequestContext) (Vo, error) {
 	return Vo{
 		Id:   2,
 		Name: "hertz@" + hertz.Version,
-	}, errors.New("hertz")
+	}, nil
 }
 
 type Vo struct {
